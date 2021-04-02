@@ -18,11 +18,10 @@ correlationMatrix <- cor(predictors.columns)
 print(correlationMatrix)
 
 relevant.columns <- append(predictors,c("alpha_3y", "beta_3y"))
-
-#funds.df <- funds.df[funds.df$investment==growth,]
-
 funds.df <- full.df[, relevant.columns]
 
+
+#---------- PHASE 1: RFE ---------------
 
 trainIndex <- createDataPartition(y = funds.df$alpha_3y, p = .7,
                                   list = FALSE,
@@ -33,9 +32,6 @@ dim(train.data)
 dim(test.data)
 x_train <- train.data[, predictors]
 y_train <- train.data[, c("alpha_3y")]
-
-
-#---------- PHASE 1: RFE ----------------------
 
 # Define the control using a random forest selection function
 control <- rfeControl(functions = lmFuncs, # random forest
@@ -54,37 +50,3 @@ print(result_rfe1)
 
 # Print the results visually
 ggplot(data = result_rfe1, metric = "RMSE") + theme_bw()
-
-#-----------------PHASE 2: EVALUATE ON TEST SET, FOR COMPARISON WITH OTHER MODELS---------------
-
-
-#new_x_train <- train.data[, new.predictors]
-
-# ---using RFE variables
-lm.fit=lm(alpha_3y ~ portfolio_preferred + portfolio_bonds + portfolio_others + portfolio_cash + portfolio_convertable, data = train.data)
-summary(lm.fit) 
-
-test.prediction <- predict(lm.fit, test.data)
-error <- (test.prediction - test.data$alpha_3y)
-RMSE<- sqrt(mean(error^2))
-print(RMSE)
-
-# --- using all variables
-
-lm.fit =lm(alpha_3y ~ portfolio_preferred + portfolio_bonds + portfolio_others + portfolio_cash + portfolio_convertable + portfolio_stocks, data = train.data)
-summary(lm.fit) 
-
-test.prediction <- predict(lm.fit, test.data)
-error <- (test.prediction - test.data$alpha_3y)
-RMSE<- sqrt(mean(error^2))
-print(RMSE)
-
-#-------------------- PHASE 3: RETRAIN MODEL WITH ALL DATA-----------------------------
-
-lm.fit.full =lm(alpha_3y ~ portfolio_preferred + portfolio_bonds + portfolio_others + portfolio_cash + portfolio_convertable + portfolio_stocks, data = funds.df)
-#lm.fit.full =lm(alpha_3y ~ portfolio_preferred + portfolio_bonds + portfolio_others + portfolio_cash + portfolio_convertable, data = funds.df)
-summary(lm.fit.full)
-
-par(mfrow = c(2,2))
-plot(lm.fit.full)
-
